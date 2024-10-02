@@ -94,23 +94,28 @@ async def create_personal_category(personal_category: schemas.CreatePersonalCate
 # def home_page():
 #     return 'hello'
 
+# готово
 @app.get('/laboratories', response_model=list[schemas.TestLaboratories])
 async def get_laboratories(db: AsyncSession = Depends(get_db)):
     db_laboratories = await crud.get_laboratories(db)
     return db_laboratories
 
+# готово
 @app.post('/laboratories', response_model=schemas.TestLaboratories)
 async def create_laboratory(laboratory: schemas.CreateLaboratory, db: AsyncSession = Depends(get_db)):
-    check_laboratory = await crud.get_laboratory(db, laboratory.id)
-    if check_laboratory:
+    check_laboratory = await crud.get_laboratories(db)
+    if laboratory.name in [item.name for item in check_laboratory]:
         raise HTTPException(status_code=400, detail='Лаборатория уже существует')
 
     db_laboratory = await crud.create_laboratory(db, laboratory)
     return db_laboratory
 
-@app.get('/laboratories/{laboratory_id}', response_model=schemas.TestLaboratories)
-async def get_laboratory(db: AsyncSession = Depends(get_db), laboratory_id: Annotated[int, None] = None):
-    laboratory = await crud.get_laboratory(db, laboratory_id)
+# готово
+@app.get('/laboratories/{laboratory_name}', response_model=schemas.TestLaboratories)
+async def get_laboratory(db: AsyncSession = Depends(get_db), laboratory_name: str | None = None):
+    laboratory = await crud.get_laboratory(db, laboratory_name)
+    if laboratory is None:
+        raise HTTPException(status_code=400, detail='Название лаборатории введено неверно')
     return laboratory
 
 # @app.get('/personal_laboratories')

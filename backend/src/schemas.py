@@ -3,11 +3,9 @@ from datetime import datetime
 
 
 class ProductBase(BaseModel):
-    id: int
     name: str
 
 class PersonalBase(BaseModel):
-    id: int
     full_name: str
     birthday: str
     status: str
@@ -89,13 +87,16 @@ class Workshop(ProductBase):
 class CreateWorkshop(Workshop):
     pass
 
-class TestLaboratories(ProductBase):
-    pass
+class TestLaboratories(BaseModel):
+    id: int
+    name: str
+    test_date_start: datetime
+    test_date_finish: datetime | None = None
 
     class Config:
         from_attributes = True
 
-class CreateLaboratory(TestLaboratories):
+class CreateLaboratory(ProductBase):
     pass
 
 class Tools(ProductBase):

@@ -76,14 +76,17 @@ async def get_workshops(db: Session, skip: 0, limit: 20):
 async def get_workshop(db: Session, workshop_id: int):
     pass
 
+# готово
 async def get_laboratories(db: AsyncSession):
     result = await db.execute(select(TestLaboratories))
     return result.scalars().all()
 
-async def get_laboratory(db: AsyncSession, laboratory_id: int):
-    result = await db.execute(select(TestLaboratories).filter_by(id=laboratory_id))
+# готово
+async def get_laboratory(db: AsyncSession, laboratory_name: str):
+    result = await db.execute(select(TestLaboratories).filter_by(name=laboratory_name))
     return result.scalars().first()
 
+# готово
 async def create_laboratory(db: AsyncSession, laboratory: CreateLaboratory):
     db_laboratory = TestLaboratories(**laboratory.model_dump())
     db.add(db_laboratory)
