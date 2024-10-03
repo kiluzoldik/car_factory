@@ -2,15 +2,9 @@ from pydantic import BaseModel
 from datetime import datetime
 
 
-class ProductBase(BaseModel):
+class Product(BaseModel):
+    id: int
     name: str
-
-class PersonalBase(BaseModel):
-    full_name: str
-    birthday: str
-    status: str
-
-class Product(ProductBase):
     count: int
     process_start: datetime
     process_finish: datetime | None = None
@@ -20,72 +14,108 @@ class Product(ProductBase):
     class Config:
         from_attributes = True
 
-class CreateProduct(Product):
-    pass
+class CreateProduct(BaseModel):
+    name: str
+    count: int
+    product_category_id: int
+    laboratory_id: int | None = None
 
-class ProductCategory(ProductBase):
-    products: list[Product] = []
+class ProductCategory(BaseModel):
+    id: int
+    name: str
+    #products: list[Product] = []
 
     class Config:
         from_attributes = True
 
-class CreateProductCategory(ProductCategory):
-    pass
+class CreateProductCategory(BaseModel):
+    name: str
 
-class PersonalCategory(ProductBase):
-    pass
+class PersonalCategory(BaseModel):
+    id: int
+    name: str
 
-class CreatePersonalCategory(ProductBase):
-    pass
+class CreatePersonalCategory(BaseModel):
+    name: str
 
-class EngineerPersonal(PersonalBase):
+class EngineerPersonal(BaseModel):
+    id: int
+    full_name: str
+    birthday: str
+    status: str
     personal_category_id: int
     workshop_id: int
 
     class Config:
         from_attributes = True
 
-class CreateEngineerPersonal(EngineerPersonal):
-    pass
+class CreateEngineerPersonal(BaseModel):
+    full_name: str
+    birthday: str
+    status: str
+    personal_category_id: int
+    workshop_id: int
 
-class PersonalWorkers(PersonalBase):
+class PersonalWorkers(BaseModel):
+    id: int
+    full_name: str
+    birthday: str
+    status: str
     personal_category_id: int
     workshop_id: int
 
     class Config:
         from_attributes = True
 
-class CreatePersonalWorkers(PersonalWorkers):
-    pass
+class CreatePersonalWorkers(BaseModel):
+    full_name: str
+    birthday: str
+    status: str
+    personal_category_id: int
+    workshop_id: int
 
-class PersonalLaboratories(PersonalBase):
+class PersonalLaboratories(BaseModel):
+    id: int
+    full_name: str
+    birthday: str
+    status: str
     laboratory_id: int
 
     class Config:
         from_attributes = True
 
-class CreatePersonalLaboratory(PersonalLaboratories):
-    pass
+class CreatePersonalLaboratory(BaseModel):
+    full_name: str
+    birthday: str
+    status: str
+    laboratory_id: int
 
-class Brigades(ProductBase):
+class Brigades(BaseModel):
+    id: int
+    name: str
     workshop_id: int
     product_id: int
-    peoples: list[PersonalWorkers | EngineerPersonal | PersonalLaboratories] = []
+    # peoples: list[PersonalWorkers | EngineerPersonal | PersonalLaboratories] = []
 
     class Config:
         from_attributes = True
 
-class CreateBrigades(Brigades):
-    pass
+class CreateBrigades(BaseModel):
+    name: str
+    workshop_id: int
+    product_id: int
 
-class Workshop(ProductBase):
+class Workshop(BaseModel):
+    id: int
+    name: str
     product_category_id: int
 
     class Config:
         from_attributes = True
 
-class CreateWorkshop(Workshop):
-    pass
+class CreateWorkshop(BaseModel):
+    name: str
+    product_category_id: int
 
 class TestLaboratories(BaseModel):
     id: int
@@ -96,23 +126,29 @@ class TestLaboratories(BaseModel):
     class Config:
         from_attributes = True
 
-class CreateLaboratory(ProductBase):
-    pass
+class CreateLaboratory(BaseModel):
+    name: str
 
-class Tools(ProductBase):
+class Tools(BaseModel):
+    id: int
+    name: str
     laboratory_id: int
 
     class Config:
         from_attributes = True
 
-class CreateTool(Tools):
-    pass
+class CreateTool(BaseModel):
+    name: str
+    laboratory_id: int
 
-class WorksWithProduct(ProductBase):
+class WorksWithProduct(BaseModel):
+    id: int
+    name: str
     product_id: int
 
     class Config:
         from_attributes = True
 
-class CreateWorkForProduct(WorksWithProduct):
-    pass
+class CreateWorkForProduct(BaseModel):
+    name: str
+    product_id: int
