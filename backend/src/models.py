@@ -15,13 +15,13 @@ class Product(Base):
     name: Mapped[str]
     count: Mapped[int] = mapped_column(nullable=True)
     process_start: Mapped[datetime] = mapped_column(DateTime, server_default=text('NOW()'))
-    process_finish: Mapped[datetime | None] = mapped_column(DateTime, default=None, nullable=True)
+    process_finish: Mapped[str | None]
     product_category_id: Mapped[int] = mapped_column(ForeignKey('product_category.id', ondelete='CASCADE'))
-    laboratory_id: Mapped[int] = mapped_column(ForeignKey('test_laboratories.id'))
+    laboratory_id: Mapped[int | None] = mapped_column(ForeignKey('test_laboratories.id'))
 
     product_category = relationship('ProductCategory', back_populates='products')
     laboratory = relationship('TestLaboratories', back_populates='products')
-    works_for_product = relationship('WorksWithProduct', back_populates='product')
+    works_for_product = relationship('WorksWithProduct', back_populates='product', cascade="all, delete")
 
 class ProductCategory(Base):
 
@@ -50,7 +50,7 @@ class EngineerPersonal(Base):
     full_name: Mapped[str]
     birthday: Mapped[str]
     status: Mapped[str]
-    personal_category_id: Mapped[int] = mapped_column(ForeignKey('personal_category.id'))
+    personal_category_id: Mapped[int] = mapped_column(ForeignKey('personal_category.id', ondelete="CASCADE"))
     workshop_id: Mapped[int] = mapped_column(ForeignKey('workshop.id'))
 
     personal_category = relationship('PersonalCategory', back_populates='eng_personal')
@@ -64,7 +64,7 @@ class PersonalWorkers(Base):
     full_name: Mapped[str]
     birthday: Mapped[str]
     status: Mapped[str]
-    personal_category_id: Mapped[int] = mapped_column(ForeignKey('personal_category.id'))
+    personal_category_id: Mapped[int] = mapped_column(ForeignKey('personal_category.id', ondelete="CASCADE"))
     workshop_id: Mapped[int] = mapped_column(ForeignKey('workshop.id'))
 
 class Brigades(Base):
@@ -73,8 +73,8 @@ class Brigades(Base):
 
     id: Mapped[intpk]
     name: Mapped[str]
-    workshop_id: Mapped[int] = mapped_column(ForeignKey('workshop.id'))
-    product_id: Mapped[int] = mapped_column(ForeignKey('product.id'))
+    workshop_id: Mapped[int] = mapped_column(ForeignKey('workshop.id', ondelete='CASCADE'))
+    product_id: Mapped[int] = mapped_column(ForeignKey('product.id', ondelete='CASCADE'))
 
 class Workshop(Base):
 
@@ -82,7 +82,7 @@ class Workshop(Base):
 
     id: Mapped[intpk]
     name: Mapped[str]
-    product_category_id: Mapped[int] = mapped_column(ForeignKey('product_category.id'))
+    product_category_id: Mapped[int] = mapped_column(ForeignKey('product_category.id', ondelete="CASCADE"))
 
     eng_personal = relationship('EngineerPersonal', back_populates='workshop')
     product_category = relationship('ProductCategory', back_populates='workshop')
@@ -94,7 +94,7 @@ class TestLaboratories(Base):
     id: Mapped[intpk]
     name: Mapped[str]
     test_date_start: Mapped[datetime] = mapped_column(DateTime, server_default=text("NOW()"))
-    test_date_finish: Mapped[datetime | None] = mapped_column(DateTime, default=None, nullable=True)
+    test_date_finish: Mapped[str | None]
 
     products = relationship('Product', back_populates='laboratory')
     personal_lab = relationship('PersonalLaboratories', back_populates='laboratory')
@@ -118,7 +118,7 @@ class Tools(Base):
 
     id: Mapped[intpk]
     name: Mapped[str]
-    laboratory_id: Mapped[int] = mapped_column(ForeignKey('test_laboratories.id'))
+    laboratory_id: Mapped[int] = mapped_column(ForeignKey('test_laboratories.id', ondelete="CASCADE"))
 
     laboratory = relationship('TestLaboratories', back_populates='tools')
 
@@ -128,6 +128,6 @@ class WorksWithProduct(Base):
 
     id: Mapped[intpk]
     name: Mapped[str]
-    product_id: Mapped[int] = mapped_column(ForeignKey('product.id'))
+    product_id: Mapped[int] = mapped_column(ForeignKey('product.id', ondelete="CASCADE"))
 
     product = relationship('Product', back_populates='works_for_product')

@@ -7,7 +7,7 @@ class Product(BaseModel):
     name: str
     count: int
     process_start: datetime
-    process_finish: datetime | None = None
+    process_finish: str | None = None
     product_category_id: int
     laboratory_id: int | None = None
 
@@ -19,6 +19,12 @@ class CreateProduct(BaseModel):
     count: int
     product_category_id: int
     laboratory_id: int | None = None
+    
+class UpdateProduct(BaseModel):
+    id: int
+    name: str | None = None
+    count: int | None = None
+    process_finish: str | None = None
 
 class ProductCategory(BaseModel):
     id: int
@@ -34,6 +40,9 @@ class CreateProductCategory(BaseModel):
 class PersonalCategory(BaseModel):
     id: int
     name: str
+    
+    class config:
+        from_attributes = True
 
 class CreatePersonalCategory(BaseModel):
     name: str
@@ -55,6 +64,12 @@ class CreateEngineerPersonal(BaseModel):
     status: str
     personal_category_id: int
     workshop_id: int
+    
+class UpdateEngineerPersonal(BaseModel):
+    id: int
+    full_name: str | None = None
+    birthday: str | None = None
+    status: str | None = None
 
 class PersonalWorkers(BaseModel):
     id: int
@@ -73,6 +88,12 @@ class CreatePersonalWorkers(BaseModel):
     status: str
     personal_category_id: int
     workshop_id: int
+    
+class UpdatePersonalWorkers(BaseModel):
+    id: int
+    full_name: str | None = None
+    birthday: str | None = None
+    status: str | None = None
 
 class PersonalLaboratories(BaseModel):
     id: int
@@ -89,6 +110,12 @@ class CreatePersonalLaboratory(BaseModel):
     birthday: str
     status: str
     laboratory_id: int
+    
+class UpdatePersonalLaboratory(BaseModel):
+    id: int
+    full_name: str | None = None
+    birthday: str | None = None
+    status: str | None = None
 
 class Brigades(BaseModel):
     id: int
@@ -104,6 +131,10 @@ class CreateBrigades(BaseModel):
     name: str
     workshop_id: int
     product_id: int
+    
+class UpdateBrigades(BaseModel):
+    id: int
+    name: str | None = None
 
 class Workshop(BaseModel):
     id: int
@@ -116,12 +147,16 @@ class Workshop(BaseModel):
 class CreateWorkshop(BaseModel):
     name: str
     product_category_id: int
+    
+class UpdateWorkshop(BaseModel):
+    id: int
+    name: str | None = None
 
 class TestLaboratories(BaseModel):
     id: int
     name: str
     test_date_start: datetime
-    test_date_finish: datetime | None = None
+    test_date_finish: str | None = None
 
     class Config:
         from_attributes = True
@@ -140,6 +175,10 @@ class Tools(BaseModel):
 class CreateTool(BaseModel):
     name: str
     laboratory_id: int
+    
+class UpdateTool(BaseModel):
+    id: int
+    name: str | None = None
 
 class WorksWithProduct(BaseModel):
     id: int
@@ -152,3 +191,7 @@ class WorksWithProduct(BaseModel):
 class CreateWorkForProduct(BaseModel):
     name: str
     product_id: int
+    
+class UpdateWorkForProduct(BaseModel):
+    id: int
+    name: str | None = None
