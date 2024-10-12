@@ -1,0 +1,17 @@
+services:
+  car-factory-app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: car-factory-app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - ..:/app/
+    networks:
+      - app-network
+
+networks:
+  app-network:
