@@ -1,4 +1,4 @@
-FROM python:3.11.9-slim
+FROM python:3.11-alpine
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -15,4 +15,6 @@ RUN poetry install --no-root --no-interaction --no-ansi
 
 COPY . ./app/
 
-CMD ["uvicorn", "src.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8000
+
+CMD ["sh", "-c", "alembic upgrade head && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000"]
