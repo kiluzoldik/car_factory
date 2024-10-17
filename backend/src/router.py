@@ -5,6 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import session_factory
 import src.schemas as schemas
+from .dependencies import (create_func, 
+                           create_func_without_entity_name, 
+                           update_func, delete_func)
 from .crud import (BrigadesOperations, LaboratoriesOperations, PersonalLaboratoriesOperations,
     PersonalWorkersOperations, ProductOperations, ProductCategoryOperations,
     PersonalCategoryOperations, EngineerPersonalOperations, ToolsOperations,
@@ -74,26 +77,18 @@ async def get_db():
             await db.close()
 
 class ProductRouter:
-    # готово
     @product_router.get('/', response_model=list[schemas.Product])
     async def read_products(db: AsyncSession = Depends(get_db)):
         return await ProductOperations.get_products(db)
 
-    # готово
     @product_router.post('/', response_model=schemas.Product)
     async def create_product(product: Annotated[schemas.CreateProduct, Form()], db: AsyncSession = Depends(get_db)):
-        check_product = await ProductOperations.get_product(db, product.name)
-        if check_product:
-            raise HTTPException(status_code=400, detail='Продукт уже существует')
+        return await create_func(ProductOperations.get_products,
+                                                      ProductOperations.create_product, 
+                                                      db, 
+                                                      product,
+                                                      'Продукт')
 
-        try:
-            db_product = await ProductOperations.create_product(db, product)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-
-        return db_product
-
-    # готово
     @product_router.get('/{product_name}', response_model=schemas.Product)
     async def get_product(product_name: str, db: AsyncSession = Depends(get_db)):
         db_product = await ProductOperations.get_product(db, product_name)
@@ -104,137 +99,95 @@ class ProductRouter:
 
     @product_router.patch('/{product_name}', response_model=dict)
     async def update_product(product: Annotated[schemas.UpdateProduct, Form()], db: AsyncSession = Depends(get_db)):
-        try:
-            await ProductOperations.update_product(db, product.id, product)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-        
-        return {'detail': 'Продукт успешно изменен' }
+        return await update_func(get_func=ProductOperations.get_products,
+                                 update_func=ProductOperations.update_product,
+                                 db=db, 
+                                 something=product,
+                                 entity_name='Продукт')
 
-    @product_router.delete('/{product_id}')
+    @product_router.delete('/{product_id}', response_model=dict)
     async def delete_product(product_id: int, db: AsyncSession = Depends(get_db)):
-        return await ProductOperations.delete_product(db, product_id)
+        return await delete_func(get_func=ProductOperations.get_products,
+                                 del_func=ProductOperations.delete_product,
+                                 db=db, 
+                                 something_id=product_id,
+                                 entity_name='Продукт')
 
 class ProductCategoryRouter:
-    # готово
     @product_category_router.get('/', response_model=list[schemas.ProductCategory])
     async def get_product_categories(db: AsyncSession = Depends(get_db)):
         categories = await ProductCategoryOperations.get_product_categories(db)
         return categories
 
-    # готово
     @product_category_router.post('/', response_model=schemas.ProductCategory)
-    async def create_product_category(product_category: Annotated[schemas.CreateProductCategory, Form()], db: AsyncSession = Depends(get_db)):
-        check_category = await ProductCategoryOperations.get_product_categories(db)
-        if product_category.name in [category.name for category in check_category]:
-            raise HTTPException(status_code=400, detail='Категория существует')
-
-        try:
-            db_categories = await ProductCategoryOperations.create_product_category(db, product_category)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-
-        return db_categories
+    async def create_product_category(product_category: Annotated[schemas.CreateProductCategory, Form()], 
+                                      db: AsyncSession = Depends(get_db)):
+        return await create_func(get_func=ProductCategoryOperations.get_product_categories,
+                                                     create_func=ProductCategoryOperations.create_product_category, 
+                                                     db=db, 
+                                                     something=product_category,
+                                                     entity_name='Категория')
 
     # PATCH для обновления категории продукта
     @product_category_router.patch('/{category_id}', response_model=dict)
     async def update_product_category(category: Annotated[schemas.ProductCategory, Form()], db: AsyncSession = Depends(get_db)):
-        db_categories = await ProductCategoryOperations.get_product_categories(db)
-        if category.id not in [item.id for item in db_categories]:
-            raise HTTPException(status_code=404, detail="Категория не найдена")
-        
-        try:
-            await ProductCategoryOperations.update_product_category(db, category.id, category)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Категория успешно изменена'}
+        return await update_func(get_func=ProductCategoryOperations.get_product_categories,
+                                 update_func=ProductCategoryOperations.update_product_category,
+                                 db=db, 
+                                 something=category,
+                                 entity_name='Категория продукта')
 
     # DELETE для удаления категории продукта
     @product_category_router.delete('/{category_id}', response_model=dict)
     async def delete_product_category(category_id: int, db: AsyncSession = Depends(get_db)):
-        db_categories = await ProductCategoryOperations.get_product_categories(db)
-        if category_id not in [item.id for item in db_categories]:
-            raise HTTPException(status_code=404, detail="Категория не найдена")
-
-        try:
-            await ProductCategoryOperations.delete_product_category(db, category_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Категория успешно удалена"}
+        return await delete_func(get_func=ProductOperations.get_products,
+                                 update_func=ProductOperations.delete_product,
+                                 db=db, 
+                                 something_id=category_id,
+                                 entity_name='Категория продукта')
 
 class PersonCategoryRouter:
-    # готово
     @personal_category_router.get('/', response_model=list[schemas.PersonalCategory])
     async def get_personal_categories(db: AsyncSession = Depends(get_db)):
-        categories = await PersonalCategoryOperations.get_personal_categories(db)
-        if not categories:
-            raise HTTPException(status_code=400, detail='Не одной категории персонала не существует')
-        return categories
+        return await PersonalCategoryOperations.get_personal_categories(db)
 
-    # готово
     @personal_category_router.post('/', response_model=schemas.PersonalCategory)
     async def create_personal_category(personal_category: Annotated[schemas.CreatePersonalCategory, Form()], db: AsyncSession = Depends(get_db)):
-        check_category = await PersonalCategoryOperations.get_personal_categories(db)
-        if personal_category.name in [item.name for item in check_category]:
-            raise HTTPException(status_code=400, detail='Категория уже существует')
-
-        try:
-            db_personal_category = await PersonalCategoryOperations.create_personal_category(db, personal_category)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-
-        return db_personal_category
+        return await create_func(get_func=PersonalCategoryOperations.get_personal_categories,
+                                                     create_func=PersonalCategoryOperations.create_personal_category, 
+                                                     db=db, 
+                                                     something=personal_category,
+                                                     entity_name='Категория персонала')
 
     # PATCH для обновления категории персонала
     @personal_category_router.patch('/{category_id}', response_model=dict)
     async def update_personal_category(category: Annotated[schemas.PersonalCategory, Form()], db: AsyncSession = Depends(get_db)):
-        db_categories = await PersonalCategoryOperations.get_personal_categories(db)
-        if category.id not in [item.id for item in db_categories]:
-            raise HTTPException(status_code=404, detail="Категория персонала не найдена")
-        
-        try:
-            await PersonalCategoryOperations.update_personal_category(db, category.id, category)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': "Категория персонала успешно изменена"}
+        return await update_func(get_func=PersonalCategoryOperations.get_personal_categories,
+                                 update_func=PersonalCategoryOperations.update_personal_category,
+                                 db=db, 
+                                 something=category,
+                                 entity_name='Категория персонала')
 
     # DELETE для удаления категории персонала
     @personal_category_router.delete('/{category_id}', response_model=dict)
     async def delete_personal_category(category_id: int, db: AsyncSession = Depends(get_db)):
-        db_categories = await PersonalCategoryOperations.get_personal_categories(db)
-        if category_id not in [item.id for item in db_categories]:
-            raise HTTPException(status_code=404, detail="Категория персонала не найдена")
-
-        try:
-            await PersonalCategoryOperations.delete_personal_category(db, category_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Категория персонала успешно удалена"}
+        return await delete_func(get_func=PersonalCategoryOperations.get_personal_categories,
+                                 update_func=PersonalCategoryOperations.delete_personal_category,
+                                 db=db, 
+                                 something_id=category_id,
+                                 entity_name='Категория продукта')
 
 class EngineerPersonalRouter:
-    # готово
     @engineer_personal_router.get('/', response_model=list[schemas.EngineerPersonal])
     async def get_engineer_personal(db: AsyncSession = Depends(get_db)):
-        personal = await EngineerPersonalOperations.get_engineer_personal(db)
-        if not personal:
-            raise HTTPException(status_code=400, detail='Работников-инженеров не существует')
-        return personal
+        return await EngineerPersonalOperations.get_engineer_personal(db)
 
-    # готово
     @engineer_personal_router.post('/', response_model=schemas.EngineerPersonal)
     async def create_engineer_person(person: Annotated[schemas.CreateEngineerPersonal, Form()], db: AsyncSession = Depends(get_db)):
-        try:
-            db_person = await EngineerPersonalOperations.create_engineer_personal(db, person)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
+        return await create_func_without_entity_name(create_func=EngineerPersonalOperations.create_engineer_personal,
+                                          db=db,
+                                          something=person)
 
-        return db_person
-
-    # готово
     @engineer_personal_router.get('/{person_id}', response_model=schemas.EngineerPersonal)
     async def get_engineer_person(person_id: int, db: AsyncSession = Depends(get_db)):
         db_person = await EngineerPersonalOperations.get_engineer_person(db, person_id)
@@ -246,51 +199,32 @@ class EngineerPersonalRouter:
     # PATCH для обновления инженера
     @engineer_personal_router.patch('/{person_id}', response_model=dict)
     async def update_engineer_person(person: Annotated[schemas.UpdateEngineerPersonal, Form()], db: AsyncSession = Depends(get_db)):
-        db_person = await EngineerPersonalOperations.get_engineer_person(db, person.id)
-        if db_person is None:
-            raise HTTPException(status_code=404, detail="Инженер не найден")
-        
-        try:
-            await EngineerPersonalOperations.update_engineer_person(db, person.id, person)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Инженер успешно изменен'}
+        return await update_func(get_func=EngineerPersonalOperations.get_engineer_personal,
+                                 update_func=EngineerPersonalOperations.update_engineer_personal,
+                                 db=db, 
+                                 something=person,
+                                 entity_name='Инженер')
 
     # DELETE для удаления инженера
     @engineer_personal_router.delete('/{person_id}', response_model=dict)
     async def delete_engineer_person(person_id: int, db: AsyncSession = Depends(get_db)):
-        db_person = await EngineerPersonalOperations.get_engineer_person(db, person_id)
-        if db_person is None:
-            raise HTTPException(status_code=404, detail="Инженер не найден")
-
-        try:
-            await EngineerPersonalOperations.delete_engineer_person(db, person_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Инженер успешно удален"}
+        return await delete_func(get_func=EngineerPersonalOperations.get_engineer_personal,
+                                 update_func=EngineerPersonalOperations.delete_engineer_personal,
+                                 db=db, 
+                                 something_id=person_id,
+                                 entity_name='Инженер')
 
 class PersonalWorkersRouter:
-    # готово
     @personal_workers_router.get('/', response_model=list[schemas.PersonalWorkers])
     async def get_personal_workers(db: AsyncSession = Depends(get_db)):
-        db_workers = await PersonalWorkersOperations.get_personal_workers(db)
-        if not db_workers:
-            raise HTTPException(status_code=400, detail='Список работников не существует')
+        return await PersonalWorkersOperations.get_personal_workers(db)
 
-        return db_workers
-
-    # готово
     @personal_workers_router.post('/', response_model=schemas.PersonalWorkers)
     async def create_personal_worker(worker: Annotated[schemas.CreatePersonalWorkers, Form()], db: AsyncSession = Depends(get_db)):
-        try:
-            db_worker = await PersonalWorkersOperations.create_personal_worker(db, worker)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-        return db_worker
+        return await create_func_without_entity_name(create_func=PersonalWorkersOperations.create_personal_worker,
+                                          db=db,
+                                          something=worker)
 
-    # готово
     @personal_workers_router.get('/{person_id}', response_model=schemas.PersonalWorkers)
     async def get_personal_worker(worker_id: int, db: AsyncSession = Depends(get_db)):
         db_worker = await PersonalWorkersOperations.get_personal_worker(db, worker_id)
@@ -302,56 +236,34 @@ class PersonalWorkersRouter:
     # PATCH для обновления персонала лаборатории
     @personal_workers_router.patch('/{person_id}', response_model=dict)
     async def update_personal_workers(person: Annotated[schemas.UpdatePersonalWorkers, Form()], db: AsyncSession = Depends(get_db)):
-        db_person = await PersonalWorkersOperations.get_personal_worker(db, person.id)
-        if db_person is None:
-            raise HTTPException(status_code=404, detail="Работник не найден")
-        
-        try:
-            await PersonalWorkersOperations.update_personal_worker(db, person.id, person)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Работник успешно изменен'}
+        return await update_func(get_func=PersonalWorkersOperations.get_personal_workers,
+                                 update_func=PersonalWorkersOperations.update_personal_worker,
+                                 db=db, 
+                                 something=person,
+                                 entity_name='Работник')
 
     # DELETE для удаления персонала лаборатории
     @personal_workers_router.delete('/{person_id}', response_model=dict)
     async def delete_personal_workers(person_id: int, db: AsyncSession = Depends(get_db)):
-        db_person = await PersonalWorkersOperations.get_personal_worker(db, person_id)
-        if db_person is None:
-            raise HTTPException(status_code=404, detail="Работник не найден")
-
-        try:
-            await PersonalWorkersOperations.delete_personal_worker(db, person_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Работник успешно удален"}
+        return await delete_func(get_func=PersonalWorkersOperations.get_personal_workers,
+                                 update_func=PersonalWorkersOperations.delete_personal_worker,
+                                 db=db, 
+                                 something_id=person_id,
+                                 entity_name='Работник')
 
 class BrigadesRouter:
-    # готово
     @brigades_router.get('/', response_model=list[schemas.Brigades])
     async def get_brigades(db: AsyncSession = Depends(get_db)):
-        db_brigades = await BrigadesOperations.get_brigades(db)
-        if not db_brigades:
-            raise HTTPException(status_code=400, detail='Бригад не существует')
+        return await BrigadesOperations.get_brigades(db)
 
-        return db_brigades
-
-    # готово
     @brigades_router.post('/', response_model=schemas.Brigades)
     async def create_brigade(brigade: Annotated[schemas.CreateBrigades, Form()], db: AsyncSession = Depends(get_db)):
-        check_brigade = await BrigadesOperations.get_brigades(db)
-        if brigade.name in [item.name for item in check_brigade]:
-            raise HTTPException(status_code=400, detail='Бригада с таким id уже существует')
+        return await create_func(get_func=BrigadesOperations.get_brigades,
+                                 create_func=BrigadesOperations.create_brigade,
+                                 db=db,
+                                 something=brigade,
+                                 entity_name='Бригада')
 
-        try:
-            db_brigade = await BrigadesOperations.create_brigade(db, brigade)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-
-        return db_brigade
-
-    # готово
     @brigades_router.get('/{brigade_id}', response_model=schemas.Brigades)
     async def get_brigade(brigade_id: int, db: AsyncSession = Depends(get_db)):
         try:
@@ -367,105 +279,65 @@ class BrigadesRouter:
     # PATCH для обновления бригады
     @brigades_router.patch('/{brigade_id}', response_model=dict)
     async def update_brigade(brigade: Annotated[schemas.UpdateBrigades, Form()], db: AsyncSession = Depends(get_db)):
-        db_brigade = await BrigadesOperations.get_brigade(db, brigade.id)
-        if db_brigade is None:
-            raise HTTPException(status_code=404, detail="Бригада не найдена")
-        
-        try:
-            await BrigadesOperations.update_brigade(db, brigade.id, brigade)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Бригада успешно изменена'}
+        return await update_func(get_func=BrigadesOperations.get_brigades,
+                                 update_func=BrigadesOperations.update_brigade,
+                                 db=db, 
+                                 something=brigade,
+                                 entity_name='Бригада')
 
     # DELETE для удаления бригады
     @brigades_router.delete('/{brigade_id}', response_model=dict)
     async def delete_brigade(brigade_id: int, db: AsyncSession = Depends(get_db)):
-        db_brigade = await BrigadesOperations.get_brigade(db, brigade_id)
-        if db_brigade is None:
-            raise HTTPException(status_code=404, detail="Бригада не найдена")
-
-        try:
-            await BrigadesOperations.delete_brigade(db, brigade_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Бригада успешно удалена"}
+        return await delete_func(get_func=BrigadesOperations.get_brigades,
+                                 update_func=BrigadesOperations.delete_brigade,
+                                 db=db, 
+                                 something_id=brigade_id,
+                                 entity_name='Бригада')
 
 class WorkshopsRouter:
-    # готово
     @workshops_router.get('/', response_model=list[schemas.Workshop])
     async def get_workshops(db: AsyncSession = Depends(get_db)):
-        db_workshops = await WorkshopsOperations.get_workshops(db)
-        if not db_workshops:
-            raise HTTPException(status_code=400, detail='Список цехов пуст')
+        return await WorkshopsOperations.get_workshops(db)
 
-        return db_workshops
-
-    # готово
     @workshops_router.post('/', response_model=schemas.Workshop)
     async def create_workshop(workshop: Annotated[schemas.CreateWorkshop, Form()], db: AsyncSession = Depends(get_db)):
-        check_workshop = await WorkshopsOperations.get_workshops(db)
-        if workshop.name in [item.name for item in check_workshop]:
-            raise HTTPException(status_code=400, detail='Цех с таким названием уже существует')
-
-        try:
-            db_workshop = await WorkshopsOperations.create_workshop(db, workshop)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-
-        return db_workshop
+        return await create_func(get_func=WorkshopsOperations.get_workshops,
+                                 create_func=WorkshopsOperations.create_workshop,
+                                 db=db,
+                                 something=workshop,
+                                 entity_name='Цех')
 
     # PATCH для обновления цеха
     @workshops_router.patch('/{workshop_id}', response_model=dict)
     async def update_workshop(workshop: Annotated[schemas.UpdateWorkshop, Form()], db: AsyncSession = Depends(get_db)):
-        db_workshops = await WorkshopsOperations.get_workshops(db)
-        if workshop.id not in [item.id for item in db_workshops]:
-            raise HTTPException(status_code=404, detail="Цех не найден")
-        
-        try:
-            await WorkshopsOperations.update_workshop(db, workshop.id, workshop)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Цех успешно изменен'}
+        return await update_func(get_func=WorkshopsOperations.get_workshops,
+                                 update_func=WorkshopsOperations.update_workshop,
+                                 db=db, 
+                                 something=workshop,
+                                 entity_name='Цех')
 
     # DELETE для удаления цеха
     @workshops_router.delete('/{workshop_id}', response_model=dict)
     async def delete_workshop(workshop_id: int, db: AsyncSession = Depends(get_db)):
-        db_workshops = await WorkshopsOperations.get_workshops(db)
-        if workshop_id not in [item.id for item in db_workshops]:
-            raise HTTPException(status_code=404, detail="Цех не найден")
-
-        try:
-            await WorkshopsOperations.delete_workshop(db, workshop_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Цех успешно удален"}
+        return await delete_func(get_func=WorkshopsOperations.get_workshops,
+                                 update_func=WorkshopsOperations.delete_workshop,
+                                 db=db, 
+                                 something_id=workshop_id,
+                                 entity_name='Цех')
 
 class LaboratoriesRouter:
-    # готово
     @laboratories_router.get('/', response_model=list[schemas.TestLaboratories])
     async def get_laboratories(db: AsyncSession = Depends(get_db)):
-        db_laboratories = await LaboratoriesOperations.get_laboratories(db)
-        return db_laboratories
+        return await LaboratoriesOperations.get_laboratories(db)
 
-    # готово
     @laboratories_router.post('/', response_model=schemas.TestLaboratories)
     async def create_laboratory(laboratory: Annotated[schemas.CreateLaboratory, Form()], db: AsyncSession = Depends(get_db)):
-        check_laboratory = await LaboratoriesOperations.get_laboratories(db)
-        if laboratory.name in [item.name for item in check_laboratory]:
-            raise HTTPException(status_code=400, detail='Лаборатория уже существует')
+        return await create_func(get_func=LaboratoriesOperations.get_laboratories,
+                                 create_func=LaboratoriesOperations.create_laboratory,
+                                 db=db,
+                                 something=laboratory,
+                                 entity_name='Лаборатория')
 
-        try:
-            db_laboratory = await LaboratoriesOperations.create_laboratory(db, laboratory)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-
-        return db_laboratory
-
-    # готово
     @laboratories_router.get('/{laboratory_name}', response_model=schemas.TestLaboratories)
     async def get_laboratory(laboratory_name: str, db: AsyncSession = Depends(get_db)):
         laboratory = await LaboratoriesOperations.get_laboratory(db, laboratory_name)
@@ -476,52 +348,32 @@ class LaboratoriesRouter:
     # PATCH для обновления лаборатории
     @laboratories_router.patch('/{laboratory_id}', response_model=dict)
     async def update_laboratory(laboratory: Annotated[schemas.TestLaboratories, Form()], db: AsyncSession = Depends(get_db)):
-        db_laboratory = await LaboratoriesOperations.get_laboratory(db, laboratory.id)
-        if db_laboratory is None:
-            raise HTTPException(status_code=404, detail="Лаборатория не найдена")
-        
-        try:
-            await LaboratoriesOperations.update_laboratory(db, laboratory.id, laboratory)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Лаборатория успешно изменена'}
+        return await update_func(get_func=LaboratoriesOperations.get_laboratories,
+                                 update_func=LaboratoriesOperations.update_laboratory,
+                                 db=db, 
+                                 something=laboratory,
+                                 entity_name='Лаборатория')
 
     # DELETE для удаления лаборатории
     @laboratories_router.delete('/{laboratory_id}', response_model=dict)
     async def delete_laboratory(laboratory_id: int, db: AsyncSession = Depends(get_db)):
-        db_laboratory = await LaboratoriesOperations.get_laboratory(db, laboratory_id)
-        if db_laboratory is None:
-            raise HTTPException(status_code=404, detail="Лаборатория не найдена")
-
-        try:
-            await LaboratoriesOperations.delete_laboratory(db, laboratory_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Лаборатория успешно удалена"}
+       return await delete_func(get_func=LaboratoriesOperations.get_laboratories,
+                                 update_func=LaboratoriesOperations.delete_laboratory,
+                                 db=db, 
+                                 something_id=laboratory_id,
+                                 entity_name='Лаборатория')
 
 class PersonalLaboratoriesRouter:
-    # готово
     @personal_laboratories_router.get('/', response_model=list[schemas.PersonalLaboratories])
     async def get_personal_laboratories(db: AsyncSession = Depends(get_db)):
-        db_personal = await PersonalLaboratoriesOperations.get_personal_laboratories(db)
-        if not db_personal:
-            raise HTTPException(status_code=400, detail='Работников для лабораторий не существует')
+        return await PersonalLaboratoriesOperations.get_personal_laboratories(db)
 
-        return db_personal
-
-    # готово
     @personal_laboratories_router.post('/', response_model=schemas.PersonalLaboratories)
     async def create_person_laboratory(person: Annotated[schemas.CreatePersonalLaboratory, Form()], db: AsyncSession = Depends(get_db)):
-        try:
-            db_person = await PersonalLaboratoriesOperations.create_person_laboratory(db, person)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
+        return await create_func_without_entity_name(create_func=PersonalLaboratoriesOperations.create_person_laboratory,
+                                          db=db,
+                                          something=person)
 
-        return db_person
-
-    # готово
     @personal_laboratories_router.get('/{person_id}', response_model=schemas.PersonalLaboratories)
     async def get_person_laboratory(person_id: int, db: AsyncSession = Depends(get_db)):
         db_person = await PersonalLaboratoriesOperations.get_person_laboratory(db, person_id)
@@ -533,127 +385,77 @@ class PersonalLaboratoriesRouter:
     # PATCH для обновления персонала лаборатории
     @personal_laboratories_router.patch('/{person_id}', response_model=dict)
     async def update_personal_laboratory(person: Annotated[schemas.UpdatePersonalLaboratory, Form()], db: AsyncSession = Depends(get_db)):
-        db_person = await PersonalLaboratoriesOperations.get_person_laboratory(db, person.id)
-        if db_person is None:
-            raise HTTPException(status_code=404, detail="Работник лаборатории не найден")
-        
-        try:
-            await PersonalLaboratoriesOperations.update_personal_laboratory(db, person.id, person)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Работник лаборатории успешно изменен'}
+        return await update_func(get_func=PersonalLaboratoriesOperations.get_personal_laboratories,
+                                 update_func=PersonalLaboratoriesOperations.update_personal_laboratory,
+                                 db=db, 
+                                 something=person,
+                                 entity_name='Работник')
 
     # DELETE для удаления персонала лаборатории
     @personal_laboratories_router.delete('/{person_id}', response_model=dict)
     async def delete_personal_laboratory(person_id: int, db: AsyncSession = Depends(get_db)):
-        db_person = await PersonalLaboratoriesOperations.get_person_laboratory(db, person_id)
-        if db_person is None:
-            raise HTTPException(status_code=404, detail="Работник лаборатории не найден")
-
-        try:
-            await PersonalLaboratoriesOperations.delete_person_laboratory(db, person_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Работник лаборатории успешно удален"}
+        return await delete_func(get_func=PersonalLaboratoriesOperations.get_personal_laboratories,
+                                 update_func=PersonalLaboratoriesOperations.delete_personal_laboratory,
+                                 db=db, 
+                                 something_id=person_id,
+                                 entity_name='Работник')
 
 class ToolsRouter:
-    # готово
     @tools_router.get('/', response_model=list[schemas.Tools])
     async def get_tools(db: AsyncSession = Depends(get_db)):
-        tools = await ToolsOperations.get_tools(db)
-        if not tools:
-            raise HTTPException(status_code=400, detail='Инструментов не существует')
+        return await ToolsOperations.get_tools(db)
 
-        return tools
-
-    # готово
     @tools_router.post('/', response_model=schemas.Tools)
     async def create_tool(tool: Annotated[schemas.CreateTool, Form()], db: AsyncSession = Depends(get_db)):
-        try:
-            db_tool = await ToolsOperations.create_tools(db, tool)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-
-        return db_tool
+        return await create_func_without_entity_name(create_func=ToolsOperations.create_tools,
+                                                     db=db,
+                                                     something=tool)
 
     # PATCH для обновления инструмента
     @tools_router.patch('/{tool_id}', response_model=dict)
     async def update_tool(tool: Annotated[schemas.UpdateTool, Form()], db: AsyncSession = Depends(get_db)):
-        db_tools = await ToolsOperations.get_tools(db)
-        if tool.id not in [item.id for item in db_tools]:
-            raise HTTPException(status_code=404, detail="Инструмент не найден")
-        
-        try:
-            await ToolsOperations.update_tool(db, tool.id, tool)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Инструмент успешно изменен'}
+        return await update_func(get_func=ToolsOperations.get_tools,
+                                 update_func=ToolsOperations.update_tool,
+                                 db=db, 
+                                 something=tool,
+                                 entity_name='Инструмент')
 
     # DELETE для удаления инструмента
     @tools_router.delete('/{tool_id}', response_model=dict)
     async def delete_tool(tool_id: int, db: AsyncSession = Depends(get_db)):
-        db_tools = await ToolsOperations.get_tools(db)
-        if tool_id not in [item.id for item in db_tools]:
-            raise HTTPException(status_code=404, detail="Инструмент не найден")
-
-        try:
-            await ToolsOperations.delete_tool(db, tool_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Инструмент успешно удален"}
+        return await delete_func(get_func=ToolsOperations.get_tools,
+                                 update_func=ToolsOperations.delete_tool,
+                                 db=db, 
+                                 something_id=tool_id,
+                                 entity_name='Инструмент')
 
 class WorksWithProductRouter:
-    # готово
     @works_with_product_router.get('/', response_model=list[schemas.WorksWithProduct])
     async def get_works_for_product(db: AsyncSession = Depends(get_db)):
-        db_works = await WorksWithProductOperations.get_works_with_product(db)
-        if not db_works:
-            raise HTTPException(status_code=400, detail='Работ для продуктов не существует')
+        return await WorksWithProductOperations.get_works_with_product(db)
 
-        return db_works
-
-    # готово
     @works_with_product_router.post('/', response_model=schemas.WorksWithProduct)
     async def create_work_for_product(work: Annotated[schemas.CreateWorkForProduct, Form()], db: AsyncSession = Depends(get_db)):
-        check_work = await WorksWithProductOperations.get_works_with_product(db)
-        if work.name in [item.name for item in check_work]:
-            raise HTTPException(status_code=400, detail='Работа для продукта с таким названием уже существует')
-
-        try:
-            db_work = await WorksWithProductOperations.create_work_for_product(db, work)
-        except:
-            raise HTTPException(status_code=500, detail='Ошибка на стороне сервера')
-
-        return db_work
+        return await create_func(get_func=WorksWithProductOperations.get_works_with_product,
+                                 create_func=WorksWithProductOperations.create_work_for_product,
+                                 db=db,
+                                 something=work,
+                                 entity_name='Работа для продукта')
 
     # PATCH для обновления работы с продуктом
     @works_with_product_router.patch('/{work_id}', response_model=dict)
     async def update_work_with_product(work: Annotated[schemas.UpdateWorkForProduct, Form()], db: AsyncSession = Depends(get_db)):
-        db_works = await WorksWithProductOperations.get_works_with_product(db)
-        if work.id not in [item.id for item in db_works]:
-            raise HTTPException(status_code=404, detail="Работа с продуктом не найдена")
-        
-        try:
-            await WorksWithProductOperations.update_work_with_product(db, work.id, work)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-        
-        return {'detail': 'Работа с продуктом успешно изменена'  }
+        return await update_func(get_func=WorksWithProductOperations.get_works_with_product,
+                                 update_func=WorksWithProductOperations.update_work_with_product,
+                                 db=db, 
+                                 something=work,
+                                 entity_name='Работа с продуктом')
 
     # DELETE для удаления работы с продуктом
     @works_with_product_router.delete('/{work_id}', response_model=dict)
     async def delete_work_with_product(work_id: int, db: AsyncSession = Depends(get_db)):
-        db_works = await WorksWithProductOperations.get_works_with_product(db)
-        if work_id not in [item.id for item in db_works]:
-            raise HTTPException(status_code=404, detail="Работа с продуктом не найдена")
-
-        try:
-            await WorksWithProductOperations.delete_work_with_product(db, work_id)
-        except:
-            raise HTTPException(status_code=500, detail="Ошибка на стороне сервера")
-
-        return {"detail": "Работа с продуктом успешно удалена"}
+        return await delete_func(get_func=WorksWithProductOperations.get_works_with_product,
+                                 update_func=WorksWithProductOperations.delete_work_with_product,
+                                 db=db, 
+                                 something_id=work_id,
+                                 entity_name='Работа с продуктом')
