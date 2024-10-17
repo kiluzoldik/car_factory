@@ -5,10 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import session_factory
 import src.schemas as schemas
-from .crud import BrigadesOperations, LaboratoriesOperations, PersonalLaboratoriesOperations, \
-    PersonalWorkersOperations, ProductOperations, ProductCategoryOperations, \
-    PersonalCategoryOperations, EngineerPersonalOperations, ToolsOperations, \
-    WorksWithProductOperations, WorkshopsOperations
+from .crud import (BrigadesOperations, LaboratoriesOperations, PersonalLaboratoriesOperations,
+    PersonalWorkersOperations, ProductOperations, ProductCategoryOperations,
+    PersonalCategoryOperations, EngineerPersonalOperations, ToolsOperations,
+    WorksWithProductOperations, WorkshopsOperations)
 
 
 product_router = APIRouter(
@@ -77,8 +77,7 @@ class ProductRouter:
     # готово
     @product_router.get('/', response_model=list[schemas.Product])
     async def read_products(db: AsyncSession = Depends(get_db)):
-        products = await ProductOperations.get_products(db)
-        return products
+        return await ProductOperations.get_products(db)
 
     # готово
     @product_router.post('/', response_model=schemas.Product)

@@ -8,7 +8,8 @@ from src.database import Base
 intpk = Annotated[int, mapped_column(primary_key=True)]
 
 class Product(Base):
-
+    '''Таблица описывающая продукт'''
+    
     __tablename__ = 'product'
 
     id: Mapped[intpk]
@@ -24,6 +25,7 @@ class Product(Base):
     works_for_product = relationship('WorksWithProduct', back_populates='product', cascade="all, delete")
 
 class ProductCategory(Base):
+    '''Таблица описывающая категорию продукта'''
 
     __tablename__ = 'product_category'
 
@@ -34,6 +36,7 @@ class ProductCategory(Base):
     workshop = relationship('Workshop', back_populates='product_category')
 
 class PersonalCategory(Base):
+    '''Таблица описывающая категорию персонала'''
     
     __tablename__ = 'personal_category'
 
@@ -43,6 +46,7 @@ class PersonalCategory(Base):
     eng_personal = relationship('EngineerPersonal', back_populates='personal_category')
 
 class EngineerPersonal(Base):
+    '''Таблица описывающая персонала инженеров'''
 
     __tablename__ = 'engineer_personal'
 
@@ -57,6 +61,7 @@ class EngineerPersonal(Base):
     workshop = relationship('Workshop', back_populates='eng_personal')
 
 class PersonalWorkers(Base):
+    '''Таблица описывающая персонал работников'''
 
     __tablename__ = 'personal_workers'
 
@@ -68,6 +73,7 @@ class PersonalWorkers(Base):
     workshop_id: Mapped[int] = mapped_column(ForeignKey('workshop.id'))
 
 class Brigades(Base):
+    '''Таблица описывающая бригады'''
 
     __tablename__ = 'brigades'
 
@@ -77,6 +83,7 @@ class Brigades(Base):
     product_id: Mapped[int] = mapped_column(ForeignKey('product.id', ondelete='CASCADE'))
 
 class Workshop(Base):
+    '''Таблица описывающая цеха'''
 
     __tablename__ = 'workshop'
 
@@ -88,6 +95,7 @@ class Workshop(Base):
     product_category = relationship('ProductCategory', back_populates='workshop')
 
 class TestLaboratories(Base):
+    '''Таблица описывающая лаборатории'''
 
     __tablename__ = 'test_laboratories'
 
@@ -101,6 +109,7 @@ class TestLaboratories(Base):
     tools = relationship('Tools', back_populates='laboratory')
 
 class PersonalLaboratories(Base):
+    '''Таблица описывающая персонал лабораторий'''
 
     __tablename__ = 'personal_laboratories'
 
@@ -113,6 +122,7 @@ class PersonalLaboratories(Base):
     laboratory = relationship('TestLaboratories', back_populates='personal_lab')
 
 class Tools(Base):
+    '''Таблица описывающая инструменты для лабораторий'''
 
     __tablename__ = 'tools'
 
@@ -123,6 +133,7 @@ class Tools(Base):
     laboratory = relationship('TestLaboratories', back_populates='tools')
 
 class WorksWithProduct(Base):
+    '''Таблица описывающая работы с продуктом'''
 
     __tablename__ = 'works_with_product'
 
